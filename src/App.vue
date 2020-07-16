@@ -1,17 +1,33 @@
 <template>
-  <div id="app">
-    <p>Score: {{ score }}</p>
-    <p>Question: {{ question.firstTerm }} {{ operatorSymbol }} {{ question.secondTerm }}</p>
+  <div id="app" class="container mx-auto px-4 text-center pt-5">
+    <h1 class="text-2xl font-medium mb-4">Arithmy</h1>
+
+    <div class="rounded-lg bg-blue-300 inline-block mx-auto text-white py-4 px-8 my-6">
+      <p class="text-lg">Score</p>
+      <p class="text-2xl font-bold">{{ score }}</p>
+    </div>
+
+    <p class="font-bold text-4xl mt-3">
+      {{ question.firstTerm }}
+      {{ operatorSymbol }}
+      {{ question.secondTerm }}
+    </p>
+
     <t-input
       v-model="input"
+      v-focus
       @keydown="filterNumbers"
       @keyup.enter="submit"
       :status="inputStatus"
+      class="mx-auto my-5 text-center font-medium text-2xl p-0"
+      maxlength="5"
     />
+
     <t-button
       @click="submit"
       :disabled="submitting"
       variant="primary"
+      class="mt-5 font-medium"
     >Submit</t-button>
   </div>
 </template>
