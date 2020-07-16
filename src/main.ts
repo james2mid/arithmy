@@ -1,3 +1,4 @@
+import './assets/tailwind.css'
 import './plugins'
 
 import Vue from 'vue'
