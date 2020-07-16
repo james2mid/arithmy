@@ -4,7 +4,7 @@
     <p>Question: {{ question.firstTerm }} {{ operatorSymbol }} {{ question.secondTerm }}</p>
     <t-input
       v-model="input"
-      @change="inputChanged"
+      @keydown="filterNumbers"
       @keyup.enter="submit"
       :status="inputStatus"
     />
@@ -101,13 +101,34 @@ export default class App extends Vue {
     this.question = generateQuestion()
   }
 
-  inputChanged () {
-    const attemptParse = parseInt(this.input)
-    if (isNaN(attemptParse) && this.input !== '') {
-      this.input = this.previousInput
+  filterNumbers (event: KeyboardEvent) {
+    // Always allow backspaces
+    if (event.key === 'Backspace') {
+      return
     }
 
-    this.previousInput = this.input
+    // Prevent non-appropriate keys from being added
+    const { key } = event
+    const validKeys = ['-', '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+    if (!validKeys.includes(key)) {
+      event.preventDefault()
+      return
+    }
+
+    // Calculate the resulting string if the key were to be added
+    const { selectionStart, selectionEnd } = (event.target as HTMLInputElement)
+    const currentValue = this.input
+
+    const nextValue: string = [
+      currentValue.slice(0, selectionStart || 0),
+      key,
+      currentValue.slice(selectionEnd || 0)
+    ].join('')
+
+    // Prevent invalid integers from being entered
+    if (!nextValue.match(/^-?[0-9]*$/)) {
+      event.preventDefault()
+    }
   }
 
   get operatorSymbol (): string {
