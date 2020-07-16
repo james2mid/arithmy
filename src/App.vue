@@ -5,6 +5,7 @@
     <t-input
       v-model="input"
       @change="inputChanged"
+      @keyup.enter="submit"
       :status="inputStatus"
     />
     <t-button
