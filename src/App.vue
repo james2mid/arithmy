@@ -184,3 +184,7 @@ export default class App extends Vue {
   }
 }
 </script>
+
+<style>
+  * { user-select: none; }
+</style>
