@@ -1,107 +1,56 @@
 <template>
-  <div id="app" class="container mx-auto px-4 text-center pt-5">
-    <h1 class="text-2xl font-medium mb-4">Arithmy</h1>
+  <div id="app" class="container px-4 mx-auto text-center">
+    <h1 class="mt-12 text-3xl font-medium">Arithmy</h1>
 
-    <div class="rounded-lg bg-blue-300 inline-block mx-auto text-white py-4 px-8 my-6">
-      <p class="text-lg">Score</p>
-      <p class="text-2xl font-bold">{{ score }}</p>
+    <div class="flex flex-wrap content-around my-16 space-y-10 md:space-y-0">
+      <div class="flex items-center justify-center w-full md:w-1/2">
+        <div class="flex-col items-center justify-center px-10 py-2 text-white bg-blue-300 rounded-lg md:py-16 md:px-20">
+          <p class="text-2xl">Score</p>
+          <transition>
+            <p class="-mt-3 text-6xl font-bold transition ease-linear">{{ score }}</p>
+          </transition>
+        </div>
+      </div>
+
+      <div class="flex-col items-center w-full space-y-5 md:w-1/2">
+        <p class="mt-3 text-4xl font-bold">
+          {{ question.firstTerm }}
+          {{ operatorSymbol }}
+          {{ question.secondTerm }}
+        </p>
+
+        <t-input
+          v-model="input"
+          v-focus
+          @keydown="filterNumbers"
+          @keyup.enter="submit"
+          :status="inputStatus"
+          class="p-0 mx-auto text-2xl font-medium text-center"
+          maxlength="5"
+        />
+
+        <div
+          class="h-1 mx-auto transition-all ease-linear bg-blue-500 rounded-md"
+          :style="barStyle"
+        ></div>
+
+        <t-button
+          @click="submit"
+          :disabled="submitting"
+          variant="primary"
+          class="font-medium"
+        >Submit</t-button>
+      </div>
     </div>
-
-    <p class="font-bold text-4xl mt-3">
-      {{ question.firstTerm }}
-      {{ operatorSymbol }}
-      {{ question.secondTerm }}
-    </p>
-
-    <t-input
-      v-model="input"
-      v-focus
-      @keydown="filterNumbers"
-      @keyup.enter="submit"
-      :status="inputStatus"
-      class="mx-auto my-5 text-center font-medium text-2xl p-0"
-      maxlength="5"
-    />
-
-    <t-button
-      @click="submit"
-      :disabled="submitting"
-      variant="primary"
-      class="mt-5 font-medium"
-    >Submit</t-button>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
+import { generateQuestion, Question, getScore, getSymbol, getResult } from '@/lib/questions'
 
-type Operator = 'add' | 'subtract' | 'multiply' | 'divide'
-
-interface Question {
-  operator: Operator;
-  firstTerm: number;
-  secondTerm: number;
-}
-
-const scoreMappings: Record<Operator, number> = {
-  add: 10,
-  subtract: 20,
-  multiply: 30,
-  divide: 40
-}
-
-function getQuestionScore (question: Question): number {
-  const { operator } = question
-  return scoreMappings[operator]
-}
-
-function getOperatorSymbol (operator: Operator): string {
-  switch (operator) {
-    case 'add':
-      return '+'
-    case 'subtract':
-      return '−'
-    case 'multiply':
-      return '×'
-    case 'divide':
-      return '÷'
-  }
-}
-
-function getResult (question: Question): number {
-  const { operator, firstTerm, secondTerm } = question
-
-  switch (operator) {
-    case 'add':
-      return firstTerm + secondTerm
-    case 'subtract':
-      return firstTerm - secondTerm
-    case 'multiply':
-      return firstTerm * secondTerm
-    case 'divide':
-      return firstTerm / secondTerm
-  }
-}
-
-/** Generates a random number between the provided minimum and maximum (inclusive). */
-function randomInt (min: number, max: number): number {
-  if (typeof min !== 'number' || typeof max !== 'number' || isNaN(min) || isNaN(max) || min >= max) {
-    throw new Error('Values for `min` and `max` must be valid integers.')
-  }
-
-  const multiplicand = Math.random()
-  const diff = max - min
-
-  return min + Math.floor(multiplicand * diff)
-}
-
-function generateQuestion (): Question {
-  const operator = 'add' // randomInt(0, )
-  const firstTerm = randomInt(1, 20)
-  const secondTerm = randomInt(1, 20)
-
-  return { operator, firstTerm, secondTerm }
-}
+/** The length of time for each question, in milliseconds. */
+const QUESTION_TIME = 10000
 
 @Component
 export default class App extends Vue {
@@ -110,11 +59,22 @@ export default class App extends Vue {
   input = ''
   inputStatus: 'success' | 'error' | 'warning' | null = null
   submitting = false
+  // eslint-disable-next-line
+  question: Question = null as any
+  questionStart: number = Date.now()
+  barStyle: any = {
+    width: 0
+  }
 
-  question!: Question
+  barStyleTimer!: number
+  timeoutTimer!: number
 
   created () {
-    this.question = generateQuestion()
+    this.loadNextQuestion()
+  }
+
+  beforeDestroy () {
+    clearInterval(this.barStyleTimer)
   }
 
   filterNumbers (event: KeyboardEvent) {
@@ -148,8 +108,35 @@ export default class App extends Vue {
   }
 
   get operatorSymbol (): string {
-    const { operator } = this.question
-    return getOperatorSymbol(operator)
+    return getSymbol(this.question)
+  }
+
+  initBarStyleTimer () {
+    this.barStyleTimer = setInterval(() => {
+      this.barStyle = this.getBarStyle()
+    }, 100)
+  }
+
+  getBarStyle () {
+    const fullWidth = 200
+
+    const timeElapsed = Date.now() - this.questionStart
+    const timeRemaining = QUESTION_TIME - timeElapsed
+
+    if (timeRemaining <= 0) {
+      return {
+        width: '0px'
+      }
+    }
+
+    const timeMultiplier = timeRemaining / QUESTION_TIME
+
+    const width = fullWidth * timeMultiplier
+    console.log(width)
+
+    return {
+      width: `${width}px`
+    }
   }
 
   loadNextQuestion (): void {
@@ -157,8 +144,21 @@ export default class App extends Vue {
     this.previousInput = ''
     this.inputStatus = null
     this.submitting = false
+    this.questionStart = Date.now()
 
-    this.question = generateQuestion()
+    this.question = generateQuestion({
+      add: 0.4,
+      subtract: 0.3,
+      multiply: 0.3,
+      divide: 0
+    }, 1, 20)
+
+    this.initBarStyleTimer()
+
+    // Initialise the timeout timer
+    this.timeoutTimer = setTimeout(() => {
+      this.submit()
+    }, QUESTION_TIME)
   }
 
   submit (): void {
@@ -166,21 +166,26 @@ export default class App extends Vue {
 
     const { input } = this
     const attempt = parseInt(input)
+    const answer = getResult(this.question)
+    const correct = (attempt === answer)
 
-    const result = getResult(this.question)
-
-    if (result === attempt) {
+    if (correct) {
       // Input is correct
       this.inputStatus = 'success'
 
-      const questionScore = getQuestionScore(this.question)
+      const questionScore = getScore(this.question)
       this.score += questionScore
     } else {
       // Input is incorrect
       this.inputStatus = 'error'
     }
 
-    setTimeout(this.loadNextQuestion.bind(this), 500)
+    clearInterval(this.barStyleTimer)
+    clearInterval(this.timeoutTimer)
+
+    setTimeout(() => {
+      this.loadNextQuestion()
+    }, correct ? 500 : 1000)
   }
 }
 </script>
