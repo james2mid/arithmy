@@ -4,11 +4,9 @@
 
     <div class="flex flex-wrap content-around my-16 space-y-10 md:space-y-0">
       <div class="flex items-center justify-center w-full md:w-1/2">
-        <div class="flex-col items-center justify-center px-10 py-2 text-white bg-blue-300 rounded-lg md:py-16 md:px-20">
+        <div class="flex flex-col items-center justify-center w-32 h-32 text-white bg-blue-300 rounded-lg md:w-56 md:h-56">
           <p class="text-2xl">Score</p>
-          <transition>
-            <p class="-mt-3 text-6xl font-bold transition ease-linear">{{ score }}</p>
-          </transition>
+          <p class="-mt-3 text-6xl font-bold">{{ score }}</p>
         </div>
       </div>
 
@@ -178,6 +176,7 @@ export default class App extends Vue {
     } else {
       // Input is incorrect
       this.inputStatus = 'error'
+      this.input = answer.toString()
     }
 
     clearInterval(this.barStyleTimer)
