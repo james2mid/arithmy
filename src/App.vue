@@ -10,7 +10,7 @@
         </div>
       </div>
 
-      <div class="flex-col items-center w-full space-y-5 md:w-1/2">
+      <div class="flex flex-col items-center w-full space-y-5 md:w-1/2">
         <p class="mt-3 text-4xl font-bold">
           {{ question.firstTerm }}
           {{ operatorSymbol }}
@@ -19,27 +19,33 @@
 
         <t-input
           v-model="input"
-          v-focus
-          @keydown="filterNumbers"
+          ref="input"
+          @keydown="inputFilter"
           @keyup.enter="submit"
           :status="inputStatus"
+          :disabled="submitting"
           class="p-0 mx-auto text-2xl font-medium text-center"
           maxlength="5"
         />
 
-        <div
-          class="h-1 mx-auto transition-all ease-linear bg-blue-500 rounded-md"
-          :style="barStyle"
-        ></div>
+        <div id="timer" class="w-56 h-2 p-0 bg-blue-200 rounded-md">
+          <div class="h-2 bg-blue-600 rounded-md" :style="`width: ${timeRemaining}%;`"></div>
+        </div>
 
         <t-button
           @click="submit"
           :disabled="submitting"
           variant="primary"
-          class="font-medium"
+          class="font-medium transition-colors duration-200"
         >Submit</t-button>
       </div>
     </div>
+
+    <a
+      href="://jamesmiddleton.me"
+      target="_blank"
+      class="mr-3 text-sm text-gray-500 transition-colors duration-300 hover:text-gray-700"
+    >Created by JM</a>
   </div>
 </template>
 
@@ -50,32 +56,34 @@ import { generateQuestion, Question, getScore, getSymbol, getResult } from '@/li
 /** The length of time for each question, in milliseconds. */
 const QUESTION_TIME = 10000
 
+/** How often the time bar should update, in milliseconds. */
+const TIME_BAR_UPDATE_INTERVAL = 50
+
 @Component
 export default class App extends Vue {
   score = 0
-  previousInput = ''
   input = ''
   inputStatus: 'success' | 'error' | 'warning' | null = null
   submitting = false
   // eslint-disable-next-line
   question: Question = null as any
   questionStart: number = Date.now()
-  barStyle: any = {
-    width: 0
-  }
+  timeRemaining = 0
 
-  barStyleTimer!: number
-  timeoutTimer!: number
+  tmrTimeRemaining!: number
+  tmrTimeout!: number
 
   created () {
     this.loadNextQuestion()
   }
 
   beforeDestroy () {
-    clearInterval(this.barStyleTimer)
+    clearInterval(this.tmrTimeRemaining)
+    clearTimeout(this.tmrTimeout)
   }
 
-  filterNumbers (event: KeyboardEvent) {
+  /** Filters input so that only numeric values are accepted. */
+  inputFilter (event: KeyboardEvent) {
     // Always allow backspaces
     if (event.key === 'Backspace') {
       return
@@ -105,41 +113,39 @@ export default class App extends Vue {
     }
   }
 
+  /** Gets the operator symbol for the current question. */
   get operatorSymbol (): string {
     return getSymbol(this.question)
   }
 
-  initBarStyleTimer () {
-    this.barStyleTimer = setInterval(() => {
-      this.barStyle = this.getBarStyle()
-    }, 100)
+  /** Starts up the timer to frequently update the progress bar. */
+  initTimeRemainingTimer () {
+    this.tmrTimeRemaining = setInterval(() => {
+      if (this.submitting) {
+        return
+      }
+
+      this.timeRemaining = this.getTimeRemaining()
+    }, TIME_BAR_UPDATE_INTERVAL)
   }
 
-  getBarStyle () {
-    const fullWidth = 200
-
+  /** Calculates the proportion of time remaining for the current question. */
+  getTimeRemaining () {
     const timeElapsed = Date.now() - this.questionStart
     const timeRemaining = QUESTION_TIME - timeElapsed
 
+    // If timeout has passed, return 0
     if (timeRemaining <= 0) {
-      return {
-        width: '0px'
-      }
+      return 0
     }
 
-    const timeMultiplier = timeRemaining / QUESTION_TIME
-
-    const width = fullWidth * timeMultiplier
-    console.log(width)
-
-    return {
-      width: `${width}px`
-    }
+    // Otherwise return proportion of time remaining
+    return (timeRemaining / QUESTION_TIME) * 100
   }
 
+  /** Generates and loads a new question and resets relevant vars. */
   loadNextQuestion (): void {
     this.input = ''
-    this.previousInput = ''
     this.inputStatus = null
     this.submitting = false
     this.questionStart = Date.now()
@@ -148,18 +154,31 @@ export default class App extends Vue {
       add: 0.4,
       subtract: 0.3,
       multiply: 0.3,
-      divide: 0
+      divide: 0.2
     }, 1, 20)
 
-    this.initBarStyleTimer()
+    // Re-focus the input box
+    this.$nextTick(() => {
+      const el = this.$refs.input as HTMLInputElement
+      el && el.focus()
+    })
+
+    // Keep time remaining up-to-date
+    this.initTimeRemainingTimer()
 
     // Initialise the timeout timer
-    this.timeoutTimer = setTimeout(() => {
+    this.tmrTimeout = setTimeout(() => {
       this.submit()
     }, QUESTION_TIME)
   }
 
+  /** Processes the current attempt and starts a timer to load the next question. */
   submit (): void {
+    // Prevent spamming of submit
+    if (this.submitting) {
+      return
+    }
+
     this.submitting = true
 
     const { input } = this
@@ -168,19 +187,20 @@ export default class App extends Vue {
     const correct = (attempt === answer)
 
     if (correct) {
-      // Input is correct
       this.inputStatus = 'success'
 
       const questionScore = getScore(this.question)
       this.score += questionScore
     } else {
-      // Input is incorrect
       this.inputStatus = 'error'
-      this.input = answer.toString()
     }
 
-    clearInterval(this.barStyleTimer)
-    clearInterval(this.timeoutTimer)
+    // Display answer even when correct
+    // as formatting may differ
+    this.input = answer.toString()
+
+    clearInterval(this.tmrTimeRemaining)
+    clearTimeout(this.tmrTimeout)
 
     setTimeout(() => {
       this.loadNextQuestion()
