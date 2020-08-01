@@ -8,10 +8,8 @@
 
 ## Features
 
-* Generates random questions with 4 operators
-* Increase your score as you answer correctly
-* Shows you the right answer when you get it wrong
-
-Not yet implemented:
-* Difficulty of questions increases as you progress
-* Various game modes, each with a set time limit
+- [x] Generates random questions with 4 operators
+- [x] Increase your score as you answer correctly
+- [x] Shows you the right answer when you get it wrong
+- [ ] Difficulty of questions increases as you progress
+- [ ] Show change in arithmetic competency over time
