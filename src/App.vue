@@ -42,7 +42,7 @@
     </div>
 
     <a
-      href="://jamesmiddleton.me"
+      href="https://jamesmiddleton.me"
       target="_blank"
       class="mr-3 text-sm text-gray-500 transition-colors duration-300 hover:text-gray-700"
     >Created by JM</a>
