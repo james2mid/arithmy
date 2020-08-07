@@ -24,7 +24,7 @@ export function probsPickRandom <T extends string> (probs: ProbMap<T>): T {
   // Remove any invalid probabilities
   for (const key of keys) {
     const value = probs[key]
-    if (typeof value !== 'number' || !Number.isFinite(value)) {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
       delete probs[key]
     }
   }
