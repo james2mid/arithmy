@@ -16,8 +16,20 @@ export type ProbMap <T extends string> = {
 
 /** Picks a random key with respects to weightings in the given probability map. */
 export function probsPickRandom <T extends string> (probs: ProbMap<T>): T {
+  // Clone the parameter to prevent mutation
+  probs = { ...probs }
+
   const keys = Object.keys(probs) as T[]
 
+  // Remove any invalid probabilities
+  for (const key of keys) {
+    const value = probs[key]
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      delete probs[key]
+    }
+  }
+
+  // Ensure the map is not empty
   if (keys.length === 0) {
     throw new Error('The probability map must not be empty.')
   }
