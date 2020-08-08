@@ -9,7 +9,7 @@
 ## Features
 
 - [x] Generates random questions with 4 operators
-- [x] Increase your score as you answer correctly
-- [x] Shows you the right answer when you get it wrong
-- [ ] Difficulty of questions increases as you progress
-- [ ] Show change in arithmetic competency over time
+- [x] Score is affected by your correct and incorrect answers
+- [x] Shows you the correct answer when incorrect
+- [x] Difficulty of questions increases and timer speeds up as you progress
+- [ ] Shows your change in arithmetic competency over time

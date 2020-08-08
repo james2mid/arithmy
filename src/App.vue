@@ -53,9 +53,6 @@
 import { Component, Vue } from 'vue-property-decorator'
 import { generateQuestion, Question, getScore, getSymbol, getResult } from '@/lib/questions'
 
-/** The length of time for each question, in milliseconds. */
-const QUESTION_TIME = 10000
-
 /** How often the time bar should update, in milliseconds. */
 const TIME_BAR_UPDATE_INTERVAL = 50
 
@@ -118,6 +115,10 @@ export default class App extends Vue {
     return getSymbol(this.question)
   }
 
+  get questionDuration (): number {
+    return 10000 / Math.pow(Math.E, this.score / 1000)
+  }
+
   /** Starts up the timer to frequently update the progress bar. */
   initTimeRemainingTimer () {
     this.tmrTimeRemaining = setInterval(() => {
@@ -132,7 +133,7 @@ export default class App extends Vue {
   /** Calculates the proportion of time remaining for the current question. */
   getTimeRemaining () {
     const timeElapsed = Date.now() - this.questionStart
-    const timeRemaining = QUESTION_TIME - timeElapsed
+    const timeRemaining = this.questionDuration - timeElapsed
 
     // If timeout has passed, return 0
     if (timeRemaining <= 0) {
@@ -140,7 +141,7 @@ export default class App extends Vue {
     }
 
     // Otherwise return proportion of time remaining
-    return (timeRemaining / QUESTION_TIME) * 100
+    return (timeRemaining / this.questionDuration) * 100
   }
 
   /** Generates and loads a new question and resets relevant vars. */
@@ -150,12 +151,7 @@ export default class App extends Vue {
     this.submitting = false
     this.questionStart = Date.now()
 
-    this.question = generateQuestion({
-      add: 0.4,
-      subtract: 0.3,
-      multiply: 0.3,
-      divide: 0.2
-    }, 1, 20)
+    this.question = generateQuestion(this.score)
 
     // Re-focus the input box
     this.$nextTick(() => {
@@ -169,7 +165,7 @@ export default class App extends Vue {
     // Initialise the timeout timer
     this.tmrTimeout = setTimeout(() => {
       this.submit()
-    }, QUESTION_TIME)
+    }, this.questionDuration)
   }
 
   /** Processes the current attempt and starts a timer to load the next question. */
@@ -193,6 +189,13 @@ export default class App extends Vue {
       this.score += questionScore
     } else {
       this.inputStatus = 'error'
+
+      const questionScore = getScore(this.question)
+      const reduction = questionScore - 5
+
+      this.score = this.score > reduction
+        ? this.score - reduction
+        : 0
     }
 
     // Display answer even when correct

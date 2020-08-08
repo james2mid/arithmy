@@ -1,4 +1,4 @@
-import { probsPickRandom, randomInt, ProbMap } from '@/lib/utils'
+import { probsPickRandom as weightedChoice, randomInt } from '@/lib/utils'
 
 interface OperatorInfo {
   symbol: string;
@@ -57,25 +57,61 @@ export function getResult (question: Question): number {
   return operators[operator].calc(a, b)
 }
 
-export function generateQuestion (operatorProbs: ProbMap<Operator>, floor: number, ceiling: number): Question {
-  const operator = probsPickRandom(operatorProbs)
-
-  if (operator === 'divide') {
-    // Take the terms from a whole number multiplication
-    // m1 * m2 = r
-    // ∴ m1 = r / m2
-
-    const m1 = randomInt(floor, ceiling)
-    const m2 = randomInt(floor, ceiling)
-
-    const firstTerm = m1 * m2
-    const secondTerm = m2
-
-    return { operator, firstTerm, secondTerm }
-  } else {
-    const firstTerm = randomInt(floor, ceiling)
-    const secondTerm = randomInt(floor, ceiling)
-
-    return { operator, firstTerm, secondTerm }
+export function generateQuestion (difficulty: number): Question {
+  // We want complicated operators to be more common as difficulty increases
+  const operatorProbs = {
+    add: difficulty + 200,
+    subtract: difficulty + 100,
+    multiply: difficulty + 50,
+    divide: difficulty
   }
+
+  const operator = weightedChoice(operatorProbs)
+
+  if (operator === 'add') {
+    const floor = ~~Math.pow(difficulty + 10, 0.5)
+    const ceiling = ~~Math.pow(difficulty + 10, 0.7)
+
+    return {
+      operator,
+      firstTerm: randomInt(floor, ceiling),
+      secondTerm: randomInt(floor, ceiling)
+    }
+  } else if (operator === 'subtract') {
+    const floor = ~~Math.pow(difficulty + 10, 0.5)
+    const ceiling = ~~Math.pow(difficulty + 10, 0.7)
+
+    return {
+      operator,
+      firstTerm: randomInt(floor, ceiling),
+      secondTerm: randomInt(floor, ceiling)
+    }
+  } else if (operator === 'multiply') {
+    const floor = ~~Math.pow(difficulty + 10, 0.3)
+    const ceiling = ~~Math.pow(difficulty + 10, 0.5)
+
+    return {
+      operator,
+      firstTerm: randomInt(floor, ceiling),
+      secondTerm: randomInt(floor, ceiling)
+    }
+  } else if (operator === 'divide') {
+    const floor = ~~Math.pow(difficulty + 10, 0.3)
+    const ceiling = ~~Math.pow(difficulty + 10, 0.5)
+
+    // Take the terms from a whole number multiplication
+    // rnd1 * rnd2 = res
+    // ∴ ans = rnd1 = res / rnd2
+
+    const rnd1 = randomInt(floor, ceiling)
+    const rnd2 = randomInt(floor, ceiling)
+
+    return {
+      operator,
+      firstTerm: rnd1 * rnd2,
+      secondTerm: rnd2
+    }
+  }
+
+  throw new Error()
 }
