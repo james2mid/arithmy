@@ -71,6 +71,21 @@ export default class App extends Vue {
   tmrTimeout!: number
 
   created () {
+    // Load score from localStorage
+    const existingScoreRaw = window.localStorage.getItem('score')
+    if (existingScoreRaw) {
+      const existingScore = parseInt(existingScoreRaw)
+      if (existingScore) {
+        this.score = existingScore
+      }
+    }
+
+    // Save score to localStorage
+    this.$watch('score', () => {
+      console.log('saving')
+      window.localStorage.setItem('score', this.score.toString())
+    })
+
     this.loadNextQuestion()
   }
 
